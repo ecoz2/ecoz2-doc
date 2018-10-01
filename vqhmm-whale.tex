@@ -316,14 +316,17 @@ Song file: \verb|HBSe_20151207T070326.wav|
     \item Classes with at least 6 unit instances
     \item Approximately 80\% for training, 20\% for a testing
     \item 69 training song unit instances
-    \item 8 classes
-        \tiny{
-        \begin{verbatim}
-        descending_moan      groan           gurgle      modulated_cry
-        descending_shriek    groan_+_purr    gurgle?     purr
-        \end{verbatim}
-        }
+    \item $N = 16$ states, $M = 512$ symbols
+    \item
+        8 classes:
+            \tiny{
+            \begin{verbatim}
+            descending_moan      groan           gurgle      modulated_cry
+            descending_shriek    groan_+_purr    gurgle?     purr
+            \end{verbatim}
+            }
 \end{itemize}
+
 
 \end{frame}
 
@@ -401,7 +404,8 @@ Confusion matrix:          0   1   2   3   4   5   6   7     tests   errors
     \item Classes with at least 20 unit instances
     \item Approximately 80\% for training, 20\% for a testing
     \item 752 training song unit instances
-    \item 13 classes
+    \item $N = 64$ states, $M = 2048$ symbols
+    \item 13 classes:
         \tiny{
         \begin{verbatim}
         ascending_moan      descending_shriek    gurgle            trill
