@@ -1,6 +1,5 @@
 \documentclass{beamer}
 
-%\usepackage{verbatim}
 \usepackage{anyfontsize}
 \usepackage{tikz}
 \usepackage{media9}
@@ -23,11 +22,12 @@
     Whale Song Unit Classification
 }
 \subtitle{
-    Some Preliminary Exploration\\
+    Preliminary Exploration\\
     Using Linear Prediction Vector Quantization\\
     and Hidden Markov Modeling
 }
-\author{Carlos Rueda}
+
+\date{Carlos Rueda - MBARI}
 
 \begin{document}
 
@@ -83,7 +83,7 @@
 \end{frame}
 
 \frame{
-\frametitle{Linear Predictive Coding}
+\frametitle{Linear Predictive Coding and Vector Quantization}
 
 \begin{itemize}
     \setlength\itemsep{1em}
@@ -95,9 +95,9 @@
 
     \item
     Transformed into a sequence of \alert{predictor} vectors:
-    \begin{equation*}
+    \[
         \ba = \langle \ba_1, \ba_2, \ldots, \ba_T \rangle
-    \end{equation*}
+    \]
 
     \item
     Transformed into a \alert{sequence of symbols}:
@@ -111,7 +111,7 @@
 }
 
 \frame{
-\frametitle{Linear Predictive Coding}
+\frametitle{Linear Predictive Coding and Vector Quantization}
 
 \input{lpc-vq.tex}
 
@@ -126,7 +126,7 @@
     \item
         Estimate $x(n)$ as a linear combination of $P$ previous samples:
         \begin{equation*}
-            \hat{x}(n) = - \sum\limits_{i=1}^{P} \alert{a(i)} x(n-i)
+            \hat{x}(n) = - \sum\limits_{i=1}^{P} a_i x(n-i)
         \end{equation*}
 
 \end{itemize}
@@ -142,18 +142,23 @@
     \begin{equation*}
         \begin{array}{rclc}
             e(n) &=& x(n) - \hat{x}(n)\\
-            &=& \sum\limits_{i=0}^{P} \alert{a(i)} x(n-i)
+            &=& \sum\limits_{i=0}^{P} a_i x(n-i) & \text{($a_0 \equiv 1$)}
         \end{array}
     \end{equation*}
 
     \item Find prediction coefficients by minimizing the
         sum of the squared error over the signal interval:
-    \begin{equation*}
+        \[
         \begin{array}{rcl}
             E &=& \sum\limits_n e^2(n)\\
-              &=& \sum\limits_n \left( \sum\limits_{i=0}^{P} \alert{a(i)} x(n-i) \right)^2
+              &=& \sum\limits_n \left( \sum\limits_{i=0}^{P} a_i x(n-i) \right)^2
         \end{array}
-    \end{equation*}
+        \]
+
+    \item Resulting coefficients form prediction vector over the interval
+    \[
+         \ba = \langle a_1, a_2, \ldots, a_P \rangle
+    \]
 
 \end{itemize}
 }
@@ -171,10 +176,11 @@
          that "best" represent the predictor vectors
          arising from song units instances
 
-    \item "Best" in terms of minimizing some overall distortion measure
+    \item ``Best'' in terms of minimizing some overall distortion measure
+    \[
+        d(\ba, \bb) \equiv \text{Distance or dissimilarity between $\ba$ and $\bb$}
+    \]
 
-    \item Let $\bC \equiv \langle C_1,C_2,\ldots,C_M \rangle$ be
-        the set of centroids that best represent the space
 
 \end{itemize}
 
@@ -184,11 +190,13 @@
 \frametitle{Vector Quantization}
 
 \begin{itemize}
-    \item \alert{Quantization}:\\
-        With \bC, we can map each $\ba^{(t)}$ to a symbol $o_t$:
-        \begin{equation*}
-         o_t \gets \argmin\limits_{k=1}^{M} d(\ba^{(t)}, C_k)
-        \end{equation*}
+    \item Let $\bC \equiv \langle C_1, C_2, \ldots, C_M \rangle$ be
+    the set of centroids that best represent the space
+
+    \item Quantization of a given $\ba$:
+        \[
+             o_t \gets \argmin\limits_{k=1}^{M} d(\ba, C_k)
+        \]
 
 \end{itemize}
 
@@ -256,18 +264,261 @@ With $\lambda = (\pi, A, B)$ denoting an HMM
 	\item For given $\bo$ and $\lambda$,
         compute $P[\bo|\lambda]$
 
+	\item For a given $\bo$, \alert{learn} a model $\lambda^* \equiv (\pi^*, A^*, B^*)$\\
+        such that $P[\bo|\lambda^*]$ is maximized
+
     \item For given $\bo$ and $\lambda$,
         estimate a most likely state sequence $\bq^*$
-
-	\item Learn a model $\lambda^* \equiv (\pi^*, A^*, B^*)$\\
-        such that $P[\bo|\lambda^*]$ is maximized for a given
-		observation sequence $\bo$
 
 \end{itemize}
 
 }
 
-\input{statsml.tex}
+\begin{frame}[fragile]
+\frametitle{Implementation}
 
+ECOZ Software\footnote[frame]{
+\href{https://github.com/ecoz2/ecoz2}{https://github.com/ecoz2/ecoz2}
+}
+
+\begin{itemize}
+    \item \verb|lpc         | - Performs LPC on wav files
+    \item \verb|vq.learn    | - Trains codebooks for vector quantization
+    \item \verb|vq.quantize | - Generates observation sequences
+    \item \verb|hmm.learn   | - Trains HMM model
+    \item \verb|hmm.classify| - HMM based classification of observation sequences
+    \item \verb|vq.classify | - VQ based classification of predictor files
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Preliminary Exercises}
+
+\begin{itemize}
+    \item LPC order: 36
+    \item Analysis window size: 45ms ($1,440$ samples)
+    \item Window offset: 15ms ($480$ samples)
+    \item Pre-emphasis
+    \item Hamming weighting
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{``whale1'': On a Selection of Units from a Song File}
+
+Song file: \verb|HBSe_20151207T070326.wav|
+
+\begin{itemize}
+    \item Classes with at least 6 unit instances
+    \item Approximately 80\% for training, 20\% for a testing
+    \item 69 training song unit instances
+    \item 8 classes
+        \tiny{
+        \begin{verbatim}
+        descending_moan      groan           gurgle      modulated_cry
+        descending_shriek    groan_+_purr    gurgle?     purr
+        \end{verbatim}
+        }
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{``whale1'': Classification on 69 Training Sequences}
+
+    \tiny{
+    \begin{verbatim}
+Confusion matrix:          0   1   2   3   4   5   6   7     tests   errors
+
+    descending_moan   0    8   0   0   0   0   0   0   0        8       0
+  descending_shriek   1    0   4   0   0   1   0   0   0        5       1
+              groan   2    0   0   8   0   1   0   0   0        9       1
+       groan_+_purr   3    0   0   1   5   0   0   0   0        6       1
+             gurgle   4    0   0   0   0  20   1   0   0       21       1
+            gurgle?   5    0   0   0   0   0   5   0   0        5       0
+      modulated_cry   6    0   0   0   0   0   1   9   0       10       1
+               purr   7    0   0   0   0   0   0   0   5        5       0
+
+                    class     accuracy    tests      candidate order
+    descending_moan     0      100.00%     8          8   0   0   0   0   0   0   0
+  descending_shriek     1       80.00%     5          4   1   0   0   0   0   0   0
+              groan     2       88.89%     9          8   1   0   0   0   0   0   0
+       groan_+_purr     3       83.33%     6          5   1   0   0   0   0   0   0
+             gurgle     4       95.24%    21         20   1   0   0   0   0   0   0
+            gurgle?     5      100.00%     5          5   0   0   0   0   0   0   0
+      modulated_cry     6       90.00%    10          9   1   0   0   0   0   0   0
+               purr     7      100.00%     5          5   0   0   0   0   0   0   0
+
+                      TOTAL     92.75%    69         64   5   0   0   0   0   0   0
+    \end{verbatim}
+    }
+
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{``whale1'': Classification on 12 Test Sequences}
+
+    \tiny{
+    \begin{verbatim}
+Confusion matrix:          0   1   2   3   4   5   6   7     tests   errors
+
+    descending_moan   0    0   0   1   0   0   0   0   0        1       1
+  descending_shriek   1    0   1   0   0   0   0   0   0        1       0
+              groan   2    0   0   1   0   0   0   0   0        1       0
+       groan_+_purr   3    0   0   1   0   0   0   0   0        1       1
+             gurgle   4    0   0   0   0   4   0   0   0        4       0
+            gurgle?   5    0   0   0   0   0   1   0   0        1       0
+      modulated_cry   6    0   0   0   0   0   0   2   0        2       0
+               purr   7    0   0   0   0   0   0   0   1        1       0
+
+                    class     accuracy    tests      candidate order
+    descending_moan     0        0.00%     1          0   0   1   0   0   0   0   0
+  descending_shriek     1      100.00%     1          1   0   0   0   0   0   0   0
+              groan     2      100.00%     1          1   0   0   0   0   0   0   0
+       groan_+_purr     3        0.00%     1          0   1   0   0   0   0   0   0
+             gurgle     4      100.00%     4          4   0   0   0   0   0   0   0
+            gurgle?     5      100.00%     1          1   0   0   0   0   0   0   0
+      modulated_cry     6      100.00%     2          2   0   0   0   0   0   0   0
+               purr     7      100.00%     1          1   0   0   0   0   0   0   0
+
+                      TOTAL     83.33%    12         10   1   1   0   0   0   0   0
+    \end{verbatim}
+    }
+
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+\frametitle{``whale10'': On a Selection of Units from 10 Song Files}
+
+\begin{itemize}
+    \item Classes with at least 20 unit instances
+    \item Approximately 80\% for training, 20\% for a testing
+    \item 752 training song unit instances
+    \item 13 classes
+        \tiny{
+        \begin{verbatim}
+        ascending_moan      descending_shriek    gurgle            trill
+        ascending_shriek    groan                modulated_cry
+        cry                 grunt                modulated_moan
+        descending_moan     grunts               purr
+        \end{verbatim}
+        }
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{``whale10'': Classification on 752 Training Sequences}
+
+\tiny{
+\begin{verbatim}
+Confusion matrix:          0   1   2   3   4   5   6   7   8   9  10  11  12     tests   errors
+
+     ascending_moan   0   32   0   1   0   0   0   0   0   0   0   0   0   0       33       1
+   ascending_shriek   1    0  74   0   0   0   0   0   0   1   0   0   0   0       75       1
+                cry   2    0   0  42   0   0   0   0   0   0   0   0   0   0       42       0
+    descending_moan   3    0   0   5 116   0   0   0   0   0   0   2   0   0      123       7
+  descending_shriek   4    0   0   0   0  21   0   0   0   0   0   0   0   0       21       0
+              groan   5    0   0   0   0   0  32   0   0   0   0   0   0   0       32       0
+              grunt   6    0   0   0   0   0   0  80   0   1   0   0   0   0       81       1
+             grunts   7    0   0   0   0   0   0   0  19   0   0   0   0   0       19       0
+             gurgle   8    0   0   0   0   0   1   0   0 172   0   0   0   0      173       1
+      modulated_cry   9    0   0   0   0   0   0   0   0   0  23   0   0   0       23       0
+     modulated_moan  10    0   0   0   0   0   1   0   0   0   0  66   0   0       67       1
+               purr  11    0   0   1   0   0   0   0   0   0   0   0  28   0       29       1
+              trill  12    0   0   0   0   0   0   0   0   0   0   1   0  33       34       1
+
+                    class     accuracy    tests      candidate order
+     ascending_moan     0       96.97%    33         32   0   0   0   0   0   1   0   0   0   0   0   0
+   ascending_shriek     1       98.67%    75         74   0   0   0   0   0   0   0   0   0   0   1   0
+                cry     2      100.00%    42         42   0   0   0   0   0   0   0   0   0   0   0   0
+    descending_moan     3       94.31%   123        116   4   2   0   0   1   0   0   0   0   0   0   0
+  descending_shriek     4      100.00%    21         21   0   0   0   0   0   0   0   0   0   0   0   0
+              groan     5      100.00%    32         32   0   0   0   0   0   0   0   0   0   0   0   0
+              grunt     6       98.77%    81         80   0   1   0   0   0   0   0   0   0   0   0   0
+             grunts     7      100.00%    19         19   0   0   0   0   0   0   0   0   0   0   0   0
+             gurgle     8       99.42%   173        172   1   0   0   0   0   0   0   0   0   0   0   0
+      modulated_cry     9      100.00%    23         23   0   0   0   0   0   0   0   0   0   0   0   0
+     modulated_moan    10       98.51%    67         66   0   1   0   0   0   0   0   0   0   0   0   0
+               purr    11       96.55%    29         28   0   0   0   1   0   0   0   0   0   0   0   0
+              trill    12       97.06%    34         33   0   0   1   0   0   0   0   0   0   0   0   0
+
+                      TOTAL     98.14%   752        738   5   4   1   1   1   1   0   0   0   0   1   0
+\end{verbatim}
+}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Classification on 178 Test Sequences}
+
+\tiny{
+\begin{verbatim}
+Confusion matrix:          0   1   2   3   4   5   6   7   8   9  10  11  12     tests   errors
+
+     ascending_moan   0    1   0   4   1   0   0   0   1   0   0   0   0   0        7       6
+   ascending_shriek   1    1  11   0   1   0   0   0   0   5   0   0   0   0       18       7
+                cry   2    0   0   4   2   0   0   0   0   1   0   1   2   0       10       6
+    descending_moan   3    1   2   2  17   0   1   0   2   0   0   1   1   3       30      13
+  descending_shriek   4    0   1   0   0   4   0   0   0   0   0   0   0   0        5       1
+              groan   5    0   0   1   0   0   3   0   0   3   0   0   0   0        7       4
+              grunt   6    0   0   0   1   0   2  13   0   3   0   1   0   0       20       7
+             grunts   7    0   0   0   0   0   0   0   4   0   0   0   0   0        4       0
+             gurgle   8    0   1   3   3   0   2   2   0  27   0   2   1   1       42      15
+      modulated_cry   9    0   0   0   0   1   0   0   0   0   4   0   0   0        5       1
+     modulated_moan  10    0   0   2   3   0   1   1   0   0   0   9   0   0       16       7
+               purr  11    0   0   0   1   0   1   0   0   2   0   0   2   0        6       4
+              trill  12    0   0   0   1   0   1   1   0   1   1   0   0   3        8       5
+
+                    class     accuracy    tests      candidate order
+     ascending_moan     0       14.29%     7          1   2   0   0   2   1   0   0   0   1   0   0   0
+   ascending_shriek     1       61.11%    18         11   0   2   2   0   0   0   2   0   1   0   0   0
+                cry     2       40.00%    10          4   2   1   1   1   1   0   0   0   0   0   0   0
+    descending_moan     3       56.67%    30         17   6   1   3   3   0   0   0   0   0   0   0   0
+  descending_shriek     4       80.00%     5          4   1   0   0   0   0   0   0   0   0   0   0   0
+              groan     5       42.86%     7          3   0   2   2   0   0   0   0   0   0   0   0   0
+              grunt     6       65.00%    20         13   4   0   2   1   0   0   0   0   0   0   0   0
+             grunts     7      100.00%     4          4   0   0   0   0   0   0   0   0   0   0   0   0
+             gurgle     8       64.29%    42         27   9   1   0   1   1   1   1   1   0   0   0   0
+      modulated_cry     9       80.00%     5          4   1   0   0   0   0   0   0   0   0   0   0   0
+     modulated_moan    10       56.25%    16          9   2   2   1   0   1   1   0   0   0   0   0   0
+               purr    11       33.33%     6          2   1   1   1   0   1   0   0   0   0   0   0   0
+              trill    12       37.50%     8          3   0   1   0   1   0   1   1   0   0   0   1   0
+
+                      TOTAL     57.30%   178        102  28  11  12   9   5   3   4   1   2   0   1   0
+\end{verbatim}
+}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Some Remarks}
+
+    \begin{itemize}
+        \item Exercises so far mainly intended to validate the software revision
+        \item Labelled data used as given
+        \item SNR varies significantly
+        \item Large scale model training and tuning not considered at all
+        \item Lots of interesting approaches out there!
+    \end{itemize}
+\end{frame}
+
+%\begin{frame}
+%\begin{tikzpicture}[overlay, remember picture]
+%    \node[anchor=center] at (current page.center) {
+%    \begin{beamercolorbox}[center]{title}
+%        Thanks!
+%    \end{beamercolorbox}};
+%\end{tikzpicture}
+%\end{frame}
+
+%\input{statsml.tex}
 
 \end{document}
