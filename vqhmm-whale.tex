@@ -4,6 +4,9 @@
 \usepackage{anyfontsize}
 \usepackage{tikz}
 \usepackage{media9}
+\usepackage{graphicx}
+
+\usetheme{Boadilla}
 
 \DeclareMathOperator*{\argmax}{argmax}
 \DeclareMathOperator*{\argmin}{argmin}
@@ -20,9 +23,11 @@
     Whale Song Unit Classification
 }
 \subtitle{
+    Some Preliminary Exploration\\
     Using Linear Prediction Vector Quantization\\
     and Hidden Markov Modeling
 }
+\author{Carlos Rueda}
 
 \begin{document}
 
@@ -33,18 +38,18 @@
 \frame {
     \frametitle{The Problem}
 
-    Following Mitchell (1997), state the problem as follows:
+    Following Mitchell (1997), we state the problem as follows:
 
     \begin{itemize}
         \setlength\itemsep{1em}
-        \item \textbf{Task}: \\
-            Classify whale song unit instances from a given vocabulary\\
-            of whale song unit types
+        \item \alert{Task}: \\
+            Classify whale song unit instances\\
+            according to a given vocabulary of whale song unit types
 
-        \item \textbf{Performance measure}:\\
+        \item \alert{Performance measure}:\\
             Percent of instances correctly classified
 
-        \item \textbf{Training experience}:\\
+        \item \alert{Training experience}:\\
             A database of labelled whale song unit instances
     \end{itemize}
 }
@@ -77,97 +82,192 @@
     \end{itemize}
 \end{frame}
 
+\frame{
+\frametitle{Linear Predictive Coding}
 
-\frame {
-    \frametitle{Statistical Pattern Classification}
+\begin{itemize}
+    \setlength\itemsep{1em}
+    \item
+    Acoustic signal:
+    \begin{equation*}
+        \bx = \langle x_1, x_2, \ldots, x_N \rangle
+    \end{equation*}
 
-    \begin{itemize}
-        \setlength\itemsep{1em}
-        \item Vocabulary of $R$ song unit types:\\
-            \begin{equation*}
-                W = \{ w_1, \ldots, w_R \}
-            \end{equation*}
+    \item
+    Transformed into a sequence of \alert{predictor} vectors:
+    \begin{equation*}
+        \ba = \langle \ba_1, \ba_2, \ldots, \ba_T \rangle
+    \end{equation*}
 
-        \item Assume we have a {\it model} $h_r$ for each unit type $w_r$.\\
-            We are interested in computing:
-            \begin{equation*}
-                P[h_r|\bx] \equiv \text{Probability of $h_r$ given \bx}
-            \end{equation*}
+    \item
+    Transformed into a \alert{sequence of symbols}:
+    \begin{equation*}
+        \bo = \langle o_1, o_2, \ldots, o_T \rangle
+    \end{equation*}
+    where $o_t \in \{ 1, 2, \ldots, M \}$
 
-        \item Classification of an observation sequence \bx\\
-            is based on a {\it maximum likelihood} model selection:
-            \begin{equation*}
-             h^* \equiv \argmax\limits_{h\in H} P[h|\bx]
-            \end{equation*}
-        where $H = \{ h_1, \ldots, h_R \}$.
+\end{itemize}
 
-    \end{itemize}
 }
 
 \frame{
-    \frametitle{Maximum Likelihood model selection}
+\frametitle{Linear Predictive Coding}
 
+\input{lpc-vq.tex}
+
+}
+
+\frame{
+\frametitle{Linear Prediction}
+
+\input{lp.tex}
+
+\begin{itemize}
+    \item
+        Estimate $x(n)$ as a linear combination of $P$ previous samples:
+        \begin{equation*}
+            \hat{x}(n) = - \sum\limits_{i=1}^{P} \alert{a(i)} x(n-i)
+        \end{equation*}
+
+\end{itemize}
+
+}
+
+\frame{
+\frametitle{Linear Prediction}
+
+\begin{itemize}
+    \setlength\itemsep{1em}
+    \item Error:
     \begin{equation*}
-        \arraycolsep=1.4pt\def\arraystretch{2.2}
-        \begin{array}{rcll}
-            h^* &\equiv& \argmax\limits_{h\in H} P[h|\bx] \\
-            &=& \argmax\limits_{h\in H} \frac{P[\bx|h] P[h]}{P[\bx]}  & \qquad \text{(Bayes' theorem)}\\
-            &=& \argmax\limits_{h\in H} P[\bx|h] P[h]                 & \qquad \text{($P[\bx]$ is constant wrt $h$)}\\
-            &=& \argmax\limits_{h\in H} P[\bx|h]                      & \qquad \text{(Assumming models are equiprobable)}\\
+        \begin{array}{rclc}
+            e(n) &=& x(n) - \hat{x}(n)\\
+            &=& \sum\limits_{i=0}^{P} \alert{a(i)} x(n-i)
         \end{array}
     \end{equation*}
+
+    \item Find prediction coefficients by minimizing the
+        sum of the squared error over the signal interval:
+    \begin{equation*}
+        \begin{array}{rcl}
+            E &=& \sum\limits_n e^2(n)\\
+              &=& \sum\limits_n \left( \sum\limits_{i=0}^{P} \alert{a(i)} x(n-i) \right)^2
+        \end{array}
+    \end{equation*}
+
+\end{itemize}
 }
 
 \frame{
-    \frametitle{Linear Prediction Coding}
+\frametitle{Vector Quantization}
 
-    \begin{itemize}
-        \setlength\itemsep{1em}
-        \item
-        Acoustic signal:
-        \begin{equation*}
-        \bx = \langle x_1, x_2, \ldots, x_N \rangle
-        \end{equation*}
+\centering
+\includegraphics[width=0.3\textwidth]{voronoi.png}
+\qquad\qquad
+\includegraphics[width=0.35\textwidth]{Juang-cell_shape.png}
 
-        \item
-        Transformed into a sequence of predictor vectors:
-        \begin{equation*}
-            \ba = \langle \ba_1, \ba_2, \ldots, \ba_T \rangle
-        \end{equation*}
+\begin{itemize}
+    \item Partition the $P$-dimensional space into $M$ regions
+         that "best" represent the predictor vectors
+         arising from song units instances
 
-        \item
-        Transformed into a sequence of symbols:
-        \begin{equation*}
-            \bo = \langle o_1, o_2, \ldots, o_T \rangle
-        \end{equation*}
-        where $o_t \in \{ 1, 2, \ldots, M \}$
+    \item "Best" in terms of minimizing some overall distortion measure
 
-    \end{itemize}
+    \item Let $\bC \equiv \langle C_1,C_2,\ldots,C_M \rangle$ be
+        the set of centroids that best represent the space
+
+\end{itemize}
 
 }
 
 \frame{
-\frametitle{Linear Prediction Coding}
+\frametitle{Vector Quantization}
 
+\begin{itemize}
+    \item \alert{Quantization}:\\
+        With \bC, we can map each $\ba^{(t)}$ to a symbol $o_t$:
+        \begin{equation*}
+         o_t \gets \argmin\limits_{k=1}^{M} d(\ba^{(t)}, C_k)
+        \end{equation*}
 
-
-
-\tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt
-
-\begin{tikzpicture}[x=0.75pt,y=0.75pt,yscale=-1,xscale=1]
-    %uncomment if require: \path (0,379); %set diagram left start at 0, and has height of 379
-
-    %Flowchart: Manual Operation [id:dp8594427845919483]
-    \draw   (238.13,103) -- (225,63) -- (295,63) -- (281.88,103) -- cycle ;
-
-    % Text Node
-    \draw (272.5,146) node  [align=left] {What's this $\displaystyle F( x) =\int xdx$};
-
-
-\end{tikzpicture}
-
-
+\end{itemize}
 
 }
+
+\frame{
+\frametitle{Hidden Markov Model}
+
+\begin{itemize}
+    \item $\pi$, initial state probability distribution:
+        \[
+            \pi = (\pi_1, \pi_2, \ldots, \pi_N)
+        \]
+
+    \item  $A$, state transition distributions:
+        \[
+            A =
+            \begin{bmatrix}
+                a_{11} & a_{12} & \dots  & a_{1N} \\
+                a_{21} & a_{22} & \dots  & a_{2N} \\
+                \vdots & \vdots & \ddots & \vdots \\
+                a_{N1} & a_{N2} & \dots  & a_{NN}
+            \end{bmatrix}
+        \]
+
+    \item $B$, observation symbol distributions:
+        \[
+            B =
+            \begin{bmatrix}
+                b_{11} & b_{12} & \dots  & b_{1M} \\
+                b_{21} & b_{22} & \dots  & b_{2M} \\
+                \vdots & \vdots & \ddots & \vdots \\
+                b_{N1} & b_{N2} & \dots  & b_{NM}
+            \end{bmatrix}
+        \]
+\end{itemize}
+
+}
+
+
+\frame{
+\frametitle{Hidden Markov Modeling}
+
+\input{hmm.tex}
+
+\begin{itemize}
+    \setlength\itemsep{1em}
+    \item $\bq = \langle q_1, q_2, \ldots, q_T \rangle$:
+        hidden state sequence
+
+    \item $\bo = \langle o_1, o_2, \ldots, o_T \rangle$:
+        our acoustic signal
+\end{itemize}
+
+}
+
+\frame{
+\frametitle{HMM Operations}
+
+With $\lambda = (\pi, A, B)$ denoting an HMM
+
+\begin{itemize}
+    \setlength\itemsep{1em}
+
+	\item For given $\bo$ and $\lambda$,
+        compute $P[\bo|\lambda]$
+
+    \item For given $\bo$ and $\lambda$,
+        estimate a most likely state sequence $\bq^*$
+
+	\item Learn a model $\lambda^* \equiv (\pi^*, A^*, B^*)$\\
+        such that $P[\bo|\lambda^*]$ is maximized for a given
+		observation sequence $\bo$
+
+\end{itemize}
+
+}
+
+\input{statsml.tex}
+
 
 \end{document}

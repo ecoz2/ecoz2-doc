@@ -1,0 +1,39 @@
+\frame {
+\frametitle{Statistical Pattern Classification}
+
+\begin{itemize}
+    \setlength\itemsep{1em}
+    \item Vocabulary of $R$ song unit types:\\
+    \begin{equation*}
+        U = \{ u_1, u_2, \ldots, u_R \}
+    \end{equation*}
+
+    \item Assume we have a \alert{model} $h_r$ for each unit type $u_r$.\\
+    We are interested in computing:
+    \begin{equation*}
+        P[h_r|\bx] \equiv \text{Probability of $h_r$ given \bx}
+    \end{equation*}
+
+    \item Classification of an observation sequence \bx\\
+    is based on a \alert{maximum likelihood} model selection:
+    \begin{equation*}
+        h^* \equiv \argmax\limits_{h\in H} P[h|\bx]
+    \end{equation*}
+    where $H = \{ h_1, \ldots, h_R \}$.
+
+\end{itemize}
+}
+
+\frame{
+\frametitle{Maximum Likelihood model selection}
+
+\begin{equation*}
+    \arraycolsep=1.4pt\def\arraystretch{2.2}
+    \begin{array}{rcll}
+        h^* &\equiv& \argmax\limits_{h\in H} P[h|\bx] \\
+        &=& \argmax\limits_{h\in H} \frac{P[\bx|h] P[h]}{P[\bx]}  & \qquad \text{(Bayes' theorem)}\\
+        &=& \argmax\limits_{h\in H} P[\bx|h] P[h]                 & \qquad \text{($P[\bx]$ is constant wrt $h$)}\\
+        &=& \argmax\limits_{h\in H} P[\bx|h]                      & \qquad \text{(Assuming models are equiprobable)}\\
+    \end{array}
+\end{equation*}
+}
